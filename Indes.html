@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE-2024-0044</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        nav {
+            background-color: #444;
+            padding: 10px;
+            text-align: center;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        section {
+            padding: 20px;
+            margin: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    hex {
+            text-align:center;
+            padding: 10px 0;
+            background-color: #333;
+            color: #ff0000;
+            position fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            overflow-x: auto;
+            border: 1px solid #ccc;
+            line-height: 1.4;
+        }
+        code {
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            font-size: 14px;
+            color: #0000ff; /* Cor azul */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Vulnebilidade CVE-2024-0044</h1>
+    </header>
+    <nav>
+        <a href="#inicio">Início</a>
+        <a href="#sobre">Sobre</a>
+     
+    </nav>
+    <section id="inicio">
+        <h2>O código malicioso está no Github</h2>
+        <a href="https://github.com/007CRIPTOGRAFIA/c-CVE-2024-0044.git">Explorar aqui</a>
+       <h3>Boletim de segurança do Android – março de 2024</h3>
+       <a href="https://source.android.com/docs/security/bulletin/2024-03-01?hl=pt">Boletim</a>
+       <h4>AOSP Code Search</h4>
+       <a href="https://cs.android.com/">Código Android</a>
+    </section>
+    <!-- Inclusão completa do relatório de vulnerabilidade -->
+    <section id="vulnerabilidade">
+        <h2>Relatório de Vulnerabilidade: CVE-2024-0044</h2>
+        <h3>1. Introdução</h3>
+        <p>Este relatório detalha a vulnerabilidade CVE-2024-0044, identificada pela equipe Meta Red Team X, que afeta dispositivos Android 12 e 13. A falha permite que um atacante com acesso ao Android Debug Bridge (ADB) manipule a ferramenta “run-as” para executar código como se fosse qualquer aplicativo, incluindo aplicativos privilegiados. A vulnerabilidade foi corrigida pela Google no boletim de segurança de março de 2024.</p>
+
+        <h3>2. Descrição da Vulnerabilidade</h3>
+
+        <h4>2.1. Contexto</h4>
+        <p>A ferramenta “<code>run-as</code>” no Android permite que comandos sejam executados no contexto de um aplicativo específico, mas é projetada para rejeitar aplicativos que não são depuráveis. No entanto, a vulnerabilidade explorada permite que um atacante <code>bypass</code> este mecanismo de verificação de depurabilidade.</p>
+
+        <h4>2.2. Causa</h4>
+        <p>A vulnerabilidade <code>CVE-2024-0044</code>, identificada na função <code>createSessionInternal</code> do arquivo <code>PackageInstallerService.java</code>, é uma falha de alta severidade que afeta as versões 12 e 13 do Android. A questão surge devido à validação inadequada de entradas dentro da função <code>createSessionInternal</code>. Um atacante pode explorar essa vulnerabilidade manipulando o processo de criação de sessão, potencialmente obtendo acesso não autorizado a dados sensíveis e executando ações não autorizadas no dispositivo afetado.</p>
+
+        <h4>2.3. Exploração</h4>
+        <p>A falha permite a injeção de caracteres de nova linha e espaços no arquivo <code>packages.list</code>, que contém metadados de pacotes em um formato simples delimitado por novas linhas e espaços. Esta injeção pode criar entradas falsas que enganam a ferramenta <code>run-as</code> para acreditar que um aplicativo é depurável.</p>
+
+        <h3>3. Impacto</h3>
+
+        <h4>3.1. Consequências</h4>
+        <ul>
+            <li>Um atacante que explore esta vulnerabilidade pode:</li>
+            <li>Ler e escrever dados privados de qualquer aplicativo.</li>
+            <li>Invocar APIs do sistema como se fosse um aplicativo privilegiado.</li>
+            <li>Conseguir execução persistente de código como Google Mobile Services (GMS) ou aplicativos que utilizam seus SDKs.</li>
+        </ul>
+
+        <h4>3.2. Limitações</h4>
+        <p>Embora o atacante possa se passar pela maioria dos aplicativos, ele não pode assumir UIDs de aplicativos do sistema ou ganhar permissões de SELinux além das concedidas a um aplicativo não privilegiado.</p>
+
+        <h3>4. Detalhes Técnicos</h3>
+
+        <h4>4.1. Código de Exploração</h4>
+        <p>O código de prova de conceito (PoC) demonstra como a injeção pode ser realizada:</p>
+        <pre><code># Obter o UID do pacote
+        UID=$(pm list packages -U | sed -n "s/^package:$1 uid://p")
+
+        # Linha a ser injetada
+        PAYLOAD="@null
+        victim $UID 1 /data/user/0 default:targetSdkVersion=28 none 0 0 1 @null"
+
+        # Comando de injeção
+        pm install -i "$PAYLOAD" any-app.apk
+        </code></pre>
+
+        <h3>5. Outras Vulnerabilidades Críticas</h3>
+
+        <h4>5.1. CVE-2024-23717</h4>
+        <ul>
+            <li><strong>Tipo:</strong> Elevação de Privilégio (EoP)</li>
+            <li><strong>Gravidade:</strong> Crítico</li>
+            <li><strong>Afeta:</strong> Android 12, 12E, 13, 14</li>
+            <li><strong>Detalhes:</strong> Permite que um atacante local eleve seus privilégios no sistema, potencialmente ganhando acesso a funções restritas e dados sensíveis.</li>
+        </ul>
+
+        <h4>5.2. CVE-2023-40081</h4>
+        <ul>
+            <li><strong>Tipo:</strong> Divulgação de Informação (ID)</li>
+            <li><strong>Gravidade:</strong> Alto</li>
+            <li><strong>Afeta:</strong> Android 12, 12E, 13, 14</li>
+            <li><strong>Detalhes:</strong> Essa vulnerabilidade permite que um atacante acesse informações sensíveis que não deveriam ser acessíveis, comprometendo a confidencialidade dos dados.</li>
+        </ul>
+
+        <h3>6. Cronograma de Resposta</h3>
+
+        <h4>6.1. Descoberta e Relatório</h4>
+        <ul>
+            <li><strong>Julho de 2022:</strong> Descoberta inicial da vulnerabilidade.</li>
+            <li><strong>Outubro de 2023:</strong> Relatório enviado à Google.</li>
+        </ul>
+
+        <h4>6.2. Correção e Divulgação</h4>
+        <ul>
+            <li><strong>Dezembro de 2023:</strong> Correção desenvolvida pela Google.</li>
+            <li><strong>Março de 2024:</strong> Lançamento da correção no boletim de segurança.</li>
+        </ul>
+
+        <h4>6.3. Colaboração com a Google</h4>
+        <p>A Meta Red Team X colaborou com a Google para garantir a correção da vulnerabilidade e alinhou a divulgação pública com o lançamento do boletim de segurança.</p>
+
+        <h3>7. Conclusão</h3>
+        <p>A vulnerabilidade CVE-2024-0044 representa uma falha significativa no mecanismo de verificação de depurabilidade da ferramenta <code>run-as</code> no Android 12 e 13. A exploração desta falha permite que um atacante com acesso ao ADB execute código com privilégios elevados, comprometendo a segurança dos dados do usuário. A correção implementada pela Google no boletim de segurança de março de 2024 mitiga esta vulnerabilidade, reforçando a importância de sanitizar entradas e validar informações críticas.</p>
+    </section>
+
+  
+
+        <hex>  <p>&copy; Todas as informações foram achadas no Google site:CVE.</p></hex>
+       
+    
+
+    <script>
+        // Função para validar o formulário antes de enviar
+        function validarFormulario() {
+            // Validar CSRF token (exemplo usando PHP)
+            var csrfToken = document.querySelector('input[name="csrf_token"]').value;
+            if (!csrfToken || csrfToken !== '<?php echo $_SESSION['csrf_token']; ?>') {
+                alert('Token CSRF inválido. Por favor, tente enviar o formulário novamente.');
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
